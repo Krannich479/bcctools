@@ -18,49 +18,13 @@ class BarcodeCounter
     
 public:
     
-    void resize(){
-        seqan::resize(_table, (uint64_t)1 << (2*_readStructure.barcodeLength), 0);
-    }
-    
-    
-    void count(kseq_t * seq1){
-        
-        while (kseq_read(seq1) >= 0){
-            
-            seqan::Dna5String barcode;
+    void resize(){ seqan::resize(_table, (uint64_t)1 << (2*_readStructure.barcodeLength), 0); }
 
-            for (unsigned i = 0; i < seqan::length(_readStructure.barcodePositions); ++i)
-            {
-                seqan::Dna5String sub_barcode = seqan::infix(seq1->seq.s,
-                                                             _readStructure.barcodePositions[i].i1,
-                                                             _readStructure.barcodePositions[i].i2);
-                
-                appendValue(barcode, sub_barcode);
-            }
-        
-            // check for Ns in barcode
-            typename seqan::Iterator<seqan::Dna5String, seqan::Rooted>::Type it = begin(barcode);
-            typename seqan::Iterator<seqan::Dna5String, seqan::Rooted>::Type itEnd = end(barcode);
-            bool hasN = false;
-            for (; it != itEnd; ++it)
-            {
-                if (*it == 'N')
-                {
-                    hasN = true;
-                    break;
-                }
-            }
-            
-            // count barcode
-            if (hasN == false)
-            {
-                seqan::DnaString barcode_copy = barcode;
-                uint64_t h = hash(barcode_copy);
-                if (_table[h] != seqan::maxValue<uint16_t>())       // avoid counting overflow
-                    ++_table[h];
-            }
-        }
-    }
+    /**
+     * @brief   This function counts the occurrences of each barcode
+     * @param   seq1 are the reads from a FASTQ file
+     */
+    void count(kseq_t * seq1);
     
     const TContainer& get_counts() const { return _table; }
     
