@@ -11,6 +11,17 @@ enum Command
     BC_STATS = 3
 };
 
+
+struct ReadStructure
+{
+    bool read;      // 0 = first read in pair, 1 = second read in pair
+    
+    int barcodeLength;
+    
+    seqan::String<seqan::Pair<unsigned> > barcodePositions;     // ( [startpos,endpos[, ...)
+};
+
+
 struct Options
 {
     Command cmd;
