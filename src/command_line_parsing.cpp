@@ -228,6 +228,8 @@ void getOptionValuesIndex(Options & options, ArgumentParser & parser)
     getOptionValue(options.numAlts, parser, "alts");
 }
 
+// Parse the platform name.
+// You can add the structure string for each platform here.
 void parsePlatform(Platform & platform, ArgumentParser & parser)
 {
     seqan::CharString p;
@@ -246,6 +248,8 @@ void getOptionValuesCorrect(Options & options, ArgumentParser & parser)
 {
     parsePlatform(options.platform, parser);
     getOptionValue(options.structure, parser, "structure");
+    if (options.platform == Platform::CUSTOM)
+        options.readStructure = ReadStructure(options.structure);
     getOptionValue(options.numAlts, parser, "alts");
 }
 
@@ -321,6 +325,7 @@ ArgumentParser::ParseResult checkOptionValuesCorrect(Options & options)
         std::stringstream what;
         unsigned numAltsBase = std::ceil(std::log(options.numAlts)/std::log(2));
 
+        // Might be redundant of -s is set.
         if (options.platform == Platform::CUSTOM)
         {
             if (options.structure == "")
@@ -338,7 +343,7 @@ ArgumentParser::ParseResult checkOptionValuesCorrect(Options & options)
             printWarning(msg);
         }
 
-        // TODO: Add calculation of the spacer to the parsing of the custom string.
+        // TODO: Add calculation of the spacer to the parsing of the custom string. Do we even need this anymore?
 //         if (options.spacerLength < 0)
 //         {
 //             what << "The given spacer length " << options.spacerLength << " is not in the range of allowed values [spacer length >= 0].";
