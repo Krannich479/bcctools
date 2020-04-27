@@ -112,13 +112,16 @@ void setupParserIndex(ArgumentParser & parser, Options & options)
 
 void addOptionsCorrect(ArgumentParser & parser, Options & options)
 {
+    addOption(parser, ArgParseOption("p", "platform", "Platform used for generating the reads. When selecting 'CUSTOM', option '-s' also has to be set.", ArgParseArgument::STRING));
+    setRequired(parser, "platform");
+    seqan::setValidValues(parser, "platform", "CHROMIUM STLFR TELL-SEQ CUSTOM");
+
+    addOption(parser, ArgParseOption("s", "structure", "String defining a custom structure of the the read pair. See README for details. Only required if '-p CUSTOM' is used.", ArgParseArgument::STRING));
+
     addOption(parser, ArgParseOption("a", "alts", "Maximum number of alternative corrections.", ArgParseArgument::INTEGER));
     setDefaultValue(parser, "alts", options.numAlts);
     setMinValue(parser, "alts", "1");
     setMaxValue(parser, "alts", "48");
-
-    addOption(parser, ArgParseOption("s", "spacer", "Length of spacer between barcode and read sequence.", ArgParseArgument::INTEGER));
-    setDefaultValue(parser, "spacer", options.spacerLength);
 }
 
 void addAdvancedOptionsCorrect(ArgumentParser & /*parser*/, Options & /*options*/)
@@ -225,10 +228,29 @@ void getOptionValuesIndex(Options & options, ArgumentParser & parser)
     getOptionValue(options.numAlts, parser, "alts");
 }
 
+// Parse the platform name.
+// You can add the structure string for each platform here.
+void parsePlatform(Platform & platform, ArgumentParser & parser)
+{
+    seqan::CharString p;
+    getOptionValue(p, parser, "platform");
+    if (p == "CHROMIUM")
+        platform = Platform::CHROMIUM;
+    else if (p == "STLFR")
+        platform = Platform::STLFR;
+    else if (p == "TELL-SEQ")
+        platform = Platform::TELLSEQ;
+    else if (p == "CUSTOM")
+        platform = Platform::CUSTOM;
+}
+
 void getOptionValuesCorrect(Options & options, ArgumentParser & parser)
 {
+    parsePlatform(options.platform, parser);
+    getOptionValue(options.structure, parser, "structure");
+    if (options.platform == Platform::CUSTOM)
+        options.readStructure = ReadStructure(options.structure);
     getOptionValue(options.numAlts, parser, "alts");
-    getOptionValue(options.spacerLength, parser, "spacer");
 }
 
 void getOptionValuesStats(Options & options, ArgumentParser & parser)
@@ -302,6 +324,17 @@ ArgumentParser::ParseResult checkOptionValuesCorrect(Options & options)
     {
         std::stringstream what;
         unsigned numAltsBase = std::ceil(std::log(options.numAlts)/std::log(2));
+
+        // Might be redundant of -s is set.
+        if (options.platform == Platform::CUSTOM)
+        {
+            if (options.structure == "")
+            {
+                what << "CUSTOM platform selected, but no structure (-s) has be specified.";
+                SEQAN_THROW(ParseError(what.str()));
+            }
+        }
+
         if (options.numAlts != 1u << numAltsBase)
         {
             options.numAlts = 1u << numAltsBase;
@@ -310,11 +343,12 @@ ArgumentParser::ParseResult checkOptionValuesCorrect(Options & options)
             printWarning(msg);
         }
 
-        if (options.spacerLength < 0)
-        {
-            what << "The given spacer length " << options.spacerLength << " is not in the range of allowed values [spacer length >= 0].";
-            SEQAN_THROW(ParseError(what.str()));
-        }
+        // TODO: Add calculation of the spacer to the parsing of the custom string. Do we even need this anymore?
+//         if (options.spacerLength < 0)
+//         {
+//             what << "The given spacer length " << options.spacerLength << " is not in the range of allowed values [spacer length >= 0].";
+//             SEQAN_THROW(ParseError(what.str()));
+//         }
 
         if (!fileExists(options.whitelistFile))
         {
