@@ -11,6 +11,7 @@ enum Command
     BC_STATS = 3
 };
 
+
 enum Platform
 {
     CUSTOM = 0,
@@ -18,6 +19,7 @@ enum Platform
     TELLSEQ= 2,
     STLFR = 3
 };
+
 
 struct ReadStructure
 {
@@ -213,6 +215,7 @@ public:
         print();                // This line is totally optional and can be removed if you don't want the info.
      }
 };
+
 
 struct Options
 {
